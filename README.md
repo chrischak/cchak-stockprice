@@ -14,19 +14,24 @@ When we type in the channel "@stockprice googl"
 Bot will reply with ex: "1062.4789"
 
 install nodejs
+
 install npm
 
 create new slack bot name "stockprice"
 
 cd server
+
 create config/dev.js
 
 //dev.js
+
 module.exports = {
 alphaVantage: your_API_Key,
 botToken: your_bot_token
 };
+
 //EOF
 
 npm install
+
 npm run dev
