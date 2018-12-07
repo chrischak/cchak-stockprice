@@ -14,10 +14,9 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "body-parser": "^1.18.3",
+    "alphavantage": "^1.2.0",
     "express": "^4.16.4",
     "nodemon": "^1.18.7",
-    "request": "^2.88.0",
     "slackbots": "^1.2.0"
   }
 }
