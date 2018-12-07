@@ -11,19 +11,14 @@ const bot = new slackBot({
 
 getBotID();
 
-function getBotID() {
-  bot
-    .getUsers()
-    .then(data => {
-      for (id in data.members) {
-        if (data.members[id].name == bot.name) {
-          return data.members[id].id;
-        }
-      }
-    })
-    .then(botID => {
+async function getBotID() {
+  let data = await bot.getUsers();
+  for (id in data.members) {
+    if (data.members[id].name == bot.name) {
+      let botID = await data.members[id].id;
       message(botID);
-    });
+    }
+  }
 }
 
 function message(botID) {
@@ -64,33 +59,28 @@ function handleMessage(message, channel) {
 }
 
 //stockprice
-function getStockPrice(ticker, channel) {
-  alpha.data
-    .intraday(ticker)
-    .then(data => {
-      const StockPrice =
-        data[Object.keys(data)[1]][Object.keys(data[Object.keys(data)[1]])[0]][
-          "4. close"
-        ];
-      bot.postMessage(channel, StockPrice);
-    })
-    .catch(err => {
-      bot.postMessage(channel, "Invalid entries");
-    });
+async function getStockPrice(ticker, channel) {
+  try {
+    let data = await alpha.data.intraday(ticker);
+    const StockPrice =
+      data[Object.keys(data)[1]][Object.keys(data[Object.keys(data)[1]])[0]][
+        "4. close"
+      ];
+    bot.postMessage(channel, StockPrice);
+  } catch (err) {
+    bot.postMessage(channel, "Invalid entries");
+  }
 }
 
 //CURRENCY_EXCHANGE_RATE
-function getCurrencyExchangeRate(from_currency, to_currency, channel) {
-  alpha.forex
-    .rate(from_currency, to_currency)
-    .then(data => {
-      const CurrencyExchangeRate =
-        data[Object.keys(data)[0]]["5. Exchange Rate"];
-      bot.postMessage(channel, CurrencyExchangeRate);
-    })
-    .catch(err => {
-      bot.postMessage(channel, "Invalid entries");
-    });
+async function getCurrencyExchangeRate(from_currency, to_currency, channel) {
+  try {
+    let data = await alpha.forex.rate(from_currency, to_currency);
+    const CurrencyExchangeRate = data[Object.keys(data)[0]]["5. Exchange Rate"];
+    bot.postMessage(channel, CurrencyExchangeRate);
+  } catch (err) {
+    bot.postMessage(channel, "Invalid entries");
+  }
 }
 
 app.get("/", function(req, res) {
