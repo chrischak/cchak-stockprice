@@ -1,108 +1,81 @@
 const express = require("express");
 const keys = require("./config/keys");
-const request = require("request");
-const bodyParser = require("body-parser");
-var SlackBot = require("slackbots");
-var channel = "general";
+const alpha = require("alphavantage")({ key: keys.alphaVantage });
+const slackBot = require("slackbots");
 
-var bot = new SlackBot({
+const app = express();
+const bot = new slackBot({
   token: keys.botToken,
   name: "stockprice"
 });
 
 bot.on("start", function() {
-  bot.postMessageToChannel(channel, "Hello world!");
-  console.log("Hello world!");
+  var list = bot.getUsers();
+  bot.postMessage("UELA27WHJ", "Hello world!");
+  console.log("Hello world!", list);
 });
 
 bot.on("message", function(data) {
+  console.log(data);
   if (data.type !== "message") {
     return;
   }
-
-  handleMessage(data.text);
+  handleMessage(data.text, data.channel);
 });
 
-function handleMessage(message) {
-  switch (message) {
-    case "hi":
-    case "hello":
-      sendGreeting();
+function handleMessage(message, channel) {
+  console.log(message, channel);
+  switch (message.length) {
+    case 1:
+    case 2:
+    case 3:
+    case 4:
+    case 5:
+      const ticker = message;
+      //getStockPrice(ticker, channel);
+      break;
+    case 6:
+      const from_currency = message.substring(0, 3);
+      const to_currency = message.substring(3, 6);
+      getCurrencyExchangeRate(from_currency, to_currency, channel);
       break;
     default:
       return;
   }
 }
 
-function sendGreeting() {
-  var greeting = getGreeting();
-  bot.postMessageToChannel(channel, greeting);
-}
-
-function getGreeting() {
-  var greetings = [
-    "hello!",
-    "hi there!",
-    "cheerio!",
-    "how do you do!",
-    "¡hola!"
-  ];
-  return greetings[Math.floor(Math.random() * greetings.length)];
-}
-
-const app = express();
-
-app.use(bodyParser.urlencoded({ extended: true }));
-app.use(bodyParser.json());
-
-app.post("/", function(req, res) {
-  const BOT = req.body;
-  var msg = {
-    text: "This is a line of text.\nAnd this is another one."
-  };
-  res.send({
-    challenge: BOT.challenge,
-    token: BOT.token,
-    channel: BOT.channel,
-    text: "Hello World"
-  });
-});
-//exchange
-const API_URL = "https://www.alphavantage.co/query";
-var data = {
-  function: "CURRENCY_EXCHANGE_RATE",
-  from_currency: "USD",
-  to_currency: "CAD",
-  apikey: keys.alphaVantage
-};
-var url =
-  API_URL +
-  "?function=" +
-  data.function +
-  "&from_currency=" +
-  data.from_currency +
-  "&to_currency=" +
-  data.to_currency +
-  "&apikey=" +
-  data.apikey;
-
-request(
-  {
-    url
-  },
-  function(error, response, body) {
-    console.log("error:", error); // Print the error if one occurred
-    console.log("statusCode:", response && response.statusCode); // Print the response status code if a response was received
-    console.log(
-      "body:",
-      JSON.parse(body)["Realtime Currency Exchange Rate"]["5. Exchange Rate"]
-    );
-    app.get("/", function(req, res) {
-      res.send(JSON.parse(body));
+//stockprice
+function getStockPrice(ticker, channel) {
+  alpha.data
+    .intraday(ticker)
+    .then(data => {
+      const StockPrice =
+        data[Object.keys(data)[1]][Object.keys(data[Object.keys(data)[1]])[0]][
+          "4. close"
+        ];
+      bot.postMessage(channel, StockPrice);
+    })
+    .catch(err => {
+      bot.postMessage(channel, "Invalid entries");
     });
-  }
-);
+}
 
-//stock
+//CURRENCY_EXCHANGE_RATE
+function getCurrencyExchangeRate(from_currency, to_currency, channel) {
+  alpha.forex
+    .rate(from_currency, to_currency)
+    .then(data => {
+      const CurrencyExchangeRate =
+        data[Object.keys(data)[0]]["5. Exchange Rate"];
+      bot.postMessage(channel, CurrencyExchangeRate);
+    })
+    .catch(err => {
+      bot.postMessage(channel, "Invalid entries");
+    });
+}
+
+app.get("/", function(req, res) {
+  res.send("slack bot: stockprice");
+});
 const PORT = process.env.PORT || 5000;
 app.listen(PORT);
