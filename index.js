@@ -9,22 +9,41 @@ const bot = new slackBot({
   name: "stockprice"
 });
 
-bot.on("start", function() {
-  var list = bot.getUsers();
-  bot.postMessage("UELA27WHJ", "Hello world!");
-  console.log("Hello world!", list);
-});
+getBotID();
 
-bot.on("message", function(data) {
-  console.log(data);
-  if (data.type !== "message") {
-    return;
-  }
-  handleMessage(data.text, data.channel);
-});
+function getBotID() {
+  bot
+    .getUsers()
+    .then(data => {
+      for (id in data.members) {
+        if (data.members[id].name == bot.name) {
+          return data.members[id].id;
+        }
+      }
+    })
+    .then(botID => {
+      message(botID);
+    });
+}
+
+function message(botID) {
+  bot.on("message", function(data) {
+    if (data.type !== "message") {
+      return;
+    }
+    //work only for app_mention
+    //work only the one mention is bot
+    if (data.text.includes(botID)) {
+      handleMessage(
+        data.text.split("<@" + botID + ">")[1].trim(),
+        data.channel
+      );
+    }
+  });
+}
 
 function handleMessage(message, channel) {
-  console.log(message, channel);
+  console.log("handleMessage: ", message, channel);
   switch (message.length) {
     case 1:
     case 2:
@@ -32,7 +51,7 @@ function handleMessage(message, channel) {
     case 4:
     case 5:
       const ticker = message;
-      //getStockPrice(ticker, channel);
+      getStockPrice(ticker, channel);
       break;
     case 6:
       const from_currency = message.substring(0, 3);
